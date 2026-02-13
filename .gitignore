@@ -1,11 +1,11 @@
 ###############################################################################
 #
-# Note: You only need to look in here if you are curious or I told you to. 
+# Note: You only need to look in here if you are curious or I told you to.
 #
 ###############################################################################
 
 ###############################################################################
-# .gitignore 
+# .gitignore
 #
 # AUTHOR: Patrick J. Kelly
 # DATE: Dec 2025
@@ -377,7 +377,7 @@ firestore-debug.log
 # OTHER STUFF
 # README.md - The main read‑me for your project. It tells teammates and graders what it is and how to run it, so always commit it.
 # docs/**  - Documentation: markdown, diagrams, assignment notes, etc. These are written and should be shared.
-# .github/workflows/*.yml - GitHub Actions workflows. They are automated tools for your project should you have any. 
+# .github/workflows/*.yml - GitHub Actions workflows. They are automated tools for your project should you have any.
 #
 #
 # FINAL NOTE ABOUT THE "!" SYMBOL you will see below
