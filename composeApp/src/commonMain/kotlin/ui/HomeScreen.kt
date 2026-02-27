@@ -53,7 +53,8 @@ fun HomeScreen(
                     IconButton(onClick = onSettingsClick) {
                         Icon(
                             painter = painterResource(Res.drawable.ic_settings),
-                            contentDescription = "Settings"
+                            contentDescription = "Settings",
+                            modifier = Modifier.size(32.dp)
                         )
                     }
                 }
@@ -63,7 +64,8 @@ fun HomeScreen(
             FloatingActionButton(onClick = onAddClick) {
                 Icon(
                     painter = painterResource(Res.drawable.ic_add_circle),
-                    contentDescription = "Add Category"
+                    contentDescription = "Add Category",
+                    modifier = Modifier.size(40.dp)
                 )
             }
         }
