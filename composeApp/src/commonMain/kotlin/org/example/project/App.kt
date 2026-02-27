@@ -13,36 +13,64 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import ui.LoginScreen
 import ui.CreateAccountScreen
+import ui.HomeScreen
 
 @Composable
 @Preview
 fun App() {
     MaterialTheme {
-        var isLoggedIn by remember { mutableStateOf(false) }
+        //screen state
+        var currentScreen by remember { mutableStateOf(AppScreen.LOGIN) }
 
+        //screen change functions
         fun onLoginSuccess(email: String, password: String) {
-            isLoggedIn = true
+            //later validate with Supabase
+            currentScreen = AppScreen.HOME
+        }
+        fun onGoToCreateAccount() {
+            currentScreen = AppScreen.CREATE_ACCOUNT
+        }
+        fun onCreateAccount(email: String, password: String) {
+            //add Supabase later
+            currentScreen = AppScreen.HOME
+        }
+        fun onBackToLogin() {
+            currentScreen = AppScreen.LOGIN
         }
 
-        fun onCreateAccount() {
-            //add later
+        //local functions
+        fun onSettings() {
+            //will navigate to settings screen
+        }
+        fun onAddCategory() {
+            //will show add and edit options
+        }
+        fun onCategorySelected(categoryId: String) {
+            //will navigate into node tree
         }
 
-        if(isLoggedIn) {
-            HomeScreen()
-        } else {
-            LoginScreen(
-                onLoginClick = ::onLoginSuccess,
-                onCreateAccountClick = ::onCreateAccount
-            )
+        //switching screens
+        when (currentScreen) {
+            AppScreen.LOGIN -> {
+                LoginScreen(
+                    onLoginClick = ::onLoginSuccess,
+                    onCreateAccountClick = ::onGoToCreateAccount
+                )
+            }
+            AppScreen.CREATE_ACCOUNT -> {
+                CreateAccountScreen(
+                    onCreateAccountClick = ::onCreateAccount,
+                    onBackToLoginClick = ::onBackToLogin
+                )
+            }
+            AppScreen.HOME -> {
+                HomeScreen(
+                    onSettingsClick = ::onSettings,
+                    onAddClick = ::onAddCategory,
+                    onCategoryClick = ::onCategorySelected
+                )
+            }
         }
     }
 }
 
-@Composable
-fun HomeScreen () {
-    Text(text = "Home Screen Placeholder",
-        style = MaterialTheme.typography.headlineMedium,
-        modifier = Modifier.padding(top = 48.dp, bottom = 48.dp)
-    )
-}

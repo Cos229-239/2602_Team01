@@ -18,6 +18,10 @@ fun CreateAccountScreen(
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
 
+    //error handling variables
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+    var showError by remember { mutableStateOf(false) }
+
     //helper functions
     fun onEmailChanged(newValue: String) {
         email = newValue
@@ -28,9 +32,32 @@ fun CreateAccountScreen(
     fun onConfirmPasswordChanged(newValue: String) {
         confirmPassword = newValue
     }
+    //validate input
+    fun validateInput(): Boolean {
+        if(email.isBlank()) {
+            errorMessage = "Email cannot be empty"
+            showError = true
+            return false
+        }
+        if(password.isBlank()) {
+            errorMessage = "Password cannot be empty"
+            showError = true
+            return false
+        }
+        if(password != confirmPassword) {
+            errorMessage = "Passwords do not match"
+            showError = true
+            return false
+        }
+        //clear error if good validation
+        showError = false
+        errorMessage = null
+        return true
+    }
     fun handleCreateAccountClick() {
-        //will add a confirmation that password = confirmPassword later
-        onCreateAccountClick(email, password)
+        if(validateInput()) {
+            onCreateAccountClick(email, password)
+        }
     }
 
     Column(
@@ -51,6 +78,8 @@ fun CreateAccountScreen(
             singleLine = true
         )
 
+        Spacer(Modifier.height(16.dp))
+
         Text("Password")
         OutlinedTextField(
             value = password,
@@ -59,6 +88,26 @@ fun CreateAccountScreen(
             singleLine = true,
             visualTransformation = PasswordVisualTransformation()
         )
+
+        Spacer(Modifier.height(16.dp))
+
+        Text("Confirm Password")
+        OutlinedTextField(
+            value = confirmPassword,
+            onValueChange = ::onConfirmPasswordChanged,
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+            visualTransformation = PasswordVisualTransformation()
+        )
+
+        //Display errors
+        if (showError && errorMessage != null) {
+            Spacer(Modifier.height(12.dp))
+            Text(
+                text = errorMessage!!,
+                color = MaterialTheme.colorScheme.error
+            )
+        }
 
         Spacer(Modifier.height(24.dp))
 
