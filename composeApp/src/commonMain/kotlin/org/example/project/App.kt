@@ -14,11 +14,28 @@ import androidx.compose.ui.unit.dp
 import ui.LoginScreen
 import ui.CreateAccountScreen
 import ui.HomeScreen
+import model.Node
+import data.SampleTree
 
 @Composable
 @Preview
 fun App() {
     MaterialTheme {
+
+        //Node navigation
+        var navigationStack by remember { mutableStateOf(listOf(SampleTree.root)) }
+        val currentNode = navigationStack.last()
+
+        fun navigateTo(node: Node) {
+            navigationStack = navigationStack + node
+        }
+
+        fun navigateBack() {
+            if(navigationStack.size > 1) {
+                navigationStack = navigationStack.dropLast(1)
+            }
+        }
+
         //screen state
         var currentScreen by remember { mutableStateOf(AppScreen.LOGIN) }
 
@@ -45,9 +62,9 @@ fun App() {
         fun onAddCategory() {
             //will show add and edit options
         }
-        fun onCategorySelected(categoryId: String) {
+        /*fun onCategorySelected(categoryId: String) {
             //will navigate into node tree
-        }
+        }*/
 
         //switching screens
         when (currentScreen) {
@@ -64,11 +81,18 @@ fun App() {
                 )
             }
             AppScreen.HOME -> {
-                HomeScreen(
+                NodeScreen(
+                    node = currentNode,
+                    onNodeClick = ::navigateTo,
+                    onBack = ::navigateBack,
+                    onAdd = ::onAddCategory,
+                    onSettings = ::onSettings
+                )
+                /*HomeScreen(
                     onSettingsClick = ::onSettings,
                     onAddClick = ::onAddCategory,
                     onCategoryClick = ::onCategorySelected
-                )
+                )*/
             }
         }
     }

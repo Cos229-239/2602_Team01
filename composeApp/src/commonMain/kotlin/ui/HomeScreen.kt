@@ -22,10 +22,11 @@ import kotlinproject.composeapp.generated.resources.ic_home
 import kotlinproject.composeapp.generated.resources.ic_settings
 
 
-data class HomeCategory(
+/*data class HomeCategory(
     val label: String,
     val icon: DrawableResource
-)
+)*/
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
