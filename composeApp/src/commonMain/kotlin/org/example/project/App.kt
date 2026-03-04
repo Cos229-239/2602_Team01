@@ -13,9 +13,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import ui.LoginScreen
 import ui.CreateAccountScreen
-import ui.HomeScreen
 import model.Node
 import data.SampleTree
+import ui.NodeScreen
 
 @Composable
 @Preview
@@ -62,9 +62,6 @@ fun App() {
         fun onAddCategory() {
             //will show add and edit options
         }
-        /*fun onCategorySelected(categoryId: String) {
-            //will navigate into node tree
-        }*/
 
         //switching screens
         when (currentScreen) {
@@ -88,11 +85,6 @@ fun App() {
                     onAdd = ::onAddCategory,
                     onSettings = ::onSettings
                 )
-                /*HomeScreen(
-                    onSettingsClick = ::onSettings,
-                    onAddClick = ::onAddCategory,
-                    onCategoryClick = ::onCategorySelected
-                )*/
             }
         }
     }
