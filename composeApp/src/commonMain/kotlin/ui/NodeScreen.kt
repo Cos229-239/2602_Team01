@@ -19,7 +19,6 @@ fun NodeScreen(
     onAdd: () -> Unit,
     onSettings: () -> Unit
 ) {
-
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
@@ -28,8 +27,9 @@ fun NodeScreen(
                     if (node.id != "root") {
                         IconButton(onClick = onBack) {
                             Icon(
-                                painter = painterResource(node.icon),
-                                contentDescription = "Back"
+                                painter = painterResource(Res.drawable.ic_arrow_back),
+                                contentDescription = "Back",
+                                modifier = Modifier.size(32.dp)
                             )
                         }
                     }

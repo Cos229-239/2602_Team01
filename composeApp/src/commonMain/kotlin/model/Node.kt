@@ -7,11 +7,8 @@ data class Node(
     val title: String,
     val icon: DrawableResource,
     val children: List<Node> = emptyList(),
-    val fields: List<Field> = emptyList()
-)
 
-data class Field(
-    val id: String,
-    val label: String,
-    val value: String
+    val fields: MutableList<Field> = mutableListOf(),
+    val documents: MutableList<DocumentReference> = mutableListOf(),
+    val pictures: MutableList<ImageReference> = mutableListOf()
 )
