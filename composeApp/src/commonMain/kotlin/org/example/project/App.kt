@@ -15,7 +15,9 @@ import ui.LoginScreen
 import ui.CreateAccountScreen
 import model.Node
 import data.SampleTree
+import ui.AddMenuSheet
 import ui.NodeScreen
+import ui.FieldsScreen
 
 @Composable
 @Preview
@@ -60,7 +62,8 @@ fun App() {
             //will navigate to settings screen
         }
         fun onAddCategory() {
-            //will show add and edit options
+            //add categories
+            currentScreen = AppScreen.FIELDS
         }
 
         //switching screens
@@ -84,6 +87,13 @@ fun App() {
                     onBack = ::navigateBack,
                     onAdd = ::onAddCategory,
                     onSettings = ::onSettings
+                )
+            }
+            AppScreen.FIELDS -> {
+                FieldsScreen(
+                    node = currentNode,
+                    onBack = ::navigateBack,
+                    onAdd = ::onAddCategory
                 )
             }
         }

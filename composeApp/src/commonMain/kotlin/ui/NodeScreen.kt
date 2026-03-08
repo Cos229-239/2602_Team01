@@ -72,12 +72,13 @@ fun NodeScreen(
             }
         } else {
             //leaf node -> show fields later
-            Box(
-                modifier = Modifier.padding(paddingValues).fillMaxSize(),
-                contentAlignment = androidx.compose.ui.Alignment.Center
-            ) {
-                Text("Fields Screen to come")
-            }
+            //Box(
+                //modifier = Modifier.padding(paddingValues).fillMaxSize(),
+               // contentAlignment = androidx.compose.ui.Alignment.Center
+           // ) {
+                //Text("Fields Screen to come")
+                FieldsScreen(node, onBack, onAdd)
+            //}
         }
     }
 }

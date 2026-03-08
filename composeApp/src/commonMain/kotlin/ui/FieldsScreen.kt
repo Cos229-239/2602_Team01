@@ -34,7 +34,7 @@ fun FieldsScreen(
         Scaffold(
             topBar = {
                 CenterAlignedTopAppBar(
-                    title = { Text(node.title + "Data") },
+                    title = { Text(node.title + " Data") },
                     navigationIcon = {
                         if (node.id != "root") {
                             IconButton(onClick = onBack) {
