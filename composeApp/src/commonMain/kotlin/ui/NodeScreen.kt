@@ -3,7 +3,7 @@ package ui
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import model.Node
@@ -16,9 +16,14 @@ fun NodeScreen(
     node: Node,
     onNodeClick: (Node) -> Unit,
     onBack: () -> Unit,
-    onAdd: () -> Unit,
+    onAddFolder: () -> Unit,
+    onAddItem: () -> Unit,
     onSettings: () -> Unit
 ) {
+    var showAddMenu by remember { mutableStateOf(false) }
+
+    fun dismissAddMenu() { showAddMenu = false }
+
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
@@ -46,7 +51,7 @@ fun NodeScreen(
             )
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = onAdd) {
+            FloatingActionButton(onClick = { showAddMenu = true }) {
                 Icon(
                     painter = painterResource(Res.drawable.ic_add_circle),
                     contentDescription = "Add",
@@ -55,7 +60,7 @@ fun NodeScreen(
             }
         }
     ) { paddingValues ->
-        if (node.children.isNotEmpty()) {
+        if(node.children.isNotEmpty()) {
             LazyVerticalGrid(
                 columns = GridCells.Fixed(2),
                 modifier = Modifier.padding(paddingValues).padding(16.dp),
@@ -71,14 +76,32 @@ fun NodeScreen(
                 }
             }
         } else {
-            //leaf node -> show fields later
-            //Box(
-                //modifier = Modifier.padding(paddingValues).fillMaxSize(),
-               // contentAlignment = androidx.compose.ui.Alignment.Center
-           // ) {
-                //Text("Fields Screen to come")
-                FieldsScreen(node, onBack, onAdd)
-            //}
+            //leaf node, show fieldscreen
+            FieldsScreen(
+                node = node,
+                onBack = onBack,
+                onAddField = {},
+                onAddPhoto = {},
+                onAddDocument = {},
+                onAddReminder = {}
+            )
         }
     }
+    AddMenuSheet(
+        visible = showAddMenu,
+        isFolderContext = true, //show folder/item only
+        onAddFolder = {
+            onAddFolder()
+            dismissAddMenu()
+        },
+        onAddItem = {
+            onAddItem()
+            dismissAddMenu()
+        },
+        onAddField = {},
+        onAddPhoto = {},
+        onAddDocument = {},
+        onAddReminder = {},
+        onDismiss = ::dismissAddMenu
+    )
 }

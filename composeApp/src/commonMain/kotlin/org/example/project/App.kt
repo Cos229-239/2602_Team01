@@ -1,13 +1,8 @@
 package org.example.project
 
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -18,14 +13,16 @@ import data.SampleTree
 import ui.AddMenuSheet
 import ui.NodeScreen
 import ui.FieldsScreen
+import data.IdGenerator
 
 @Composable
 @Preview
 fun App() {
     MaterialTheme {
 
-        //Node navigation
-        var navigationStack by remember { mutableStateOf(listOf(SampleTree.root)) }
+        // Tree and Node navigation
+        var rootNode by remember { mutableStateOf(SampleTree.root) }
+        var navigationStack by remember { mutableStateOf(listOf(rootNode)) }
         val currentNode = navigationStack.last()
 
         fun navigateTo(node: Node) {
@@ -38,9 +35,74 @@ fun App() {
             }
         }
 
+        fun updateNodeInTree(current: Node, updated: Node): Node {
+            if (current.id == updated.id) {
+                return updated
+            }
+            val newChildren = current.children.map {
+                updateNodeInTree(it, updated)
+            }
+            return current.copy(children = newChildren)
+        }
+
         //screen state
         var currentScreen by remember { mutableStateOf(AppScreen.LOGIN) }
 
+        //add folder/item dialog state
+        var showNameDialog by remember { mutableStateOf(false) }
+        var newNodeName by remember { mutableStateOf("") }
+        var pendingAddFolder by remember { mutableStateOf(false) } //true-folder, false-item
+
+        fun addNode(isFolder: Boolean) {
+            pendingAddFolder = isFolder
+            newNodeName = ""
+            showNameDialog = true
+        }
+        fun confirmAddNode() {
+            if(newNodeName.isBlank()) return
+            val newNode = Node(
+                id = IdGenerator.newId(),
+                title = newNodeName,
+                icon = currentNode.icon,
+                isContainer = pendingAddFolder
+            )
+            val updatedChildren = currentNode.children + newNode
+            val updatedNode = currentNode.copy(children = updatedChildren)
+
+            //update root tree
+            rootNode = updateNodeInTree(rootNode, updatedNode)
+            //update navigation stack
+            navigationStack = navigationStack.dropLast(1) + updatedNode
+
+            showNameDialog = false
+        }
+
+        //helper functions
+        fun nodeHasData(node: Node): Boolean {
+            return node.fields.isNotEmpty() ||
+                    node.documents.isNotEmpty() ||
+                    node.pictures.isNotEmpty()
+        }
+
+        fun promoteNode(node: Node): Node {
+            val promotedChild = Node(
+                id = IdGenerator.newId(),
+                title = node.title,
+                icon = node.icon,
+                isContainer = false,
+                fields = node.fields,
+                documents = node.documents,
+                pictures = node.pictures
+            )
+
+            return node.copy(
+                fields = mutableListOf(),
+                documents = mutableListOf(),
+                pictures = mutableListOf(),
+                children = listOf(promotedChild),
+                isContainer = true
+            )
+        }
         //screen change functions
         fun onLoginSuccess(email: String, password: String) {
             //later validate with Supabase
@@ -61,9 +123,16 @@ fun App() {
         fun onSettings() {
             //will navigate to settings screen
         }
-        fun onAddCategory() {
-            //add categories
-            currentScreen = AppScreen.FIELDS
+
+        fun findNodeById(current: Node, id: String): Node? {
+            if(current.id == id) {
+                return current
+            }
+            for (child in current.children) {
+                val result = findNodeById(child, id)
+                if(result != null) return result
+            }
+            return null
         }
 
         //switching screens
@@ -81,21 +150,49 @@ fun App() {
                 )
             }
             AppScreen.HOME -> {
-                NodeScreen(
-                    node = currentNode,
-                    onNodeClick = ::navigateTo,
-                    onBack = ::navigateBack,
-                    onAdd = ::onAddCategory,
-                    onSettings = ::onSettings
-                )
+                if (currentNode.isContainer) {
+                    NodeScreen(
+                        node = currentNode,
+                        onNodeClick = ::navigateTo,
+                        onBack = ::navigateBack,
+                        onAddFolder = { addNode(true) },
+                        onAddItem = { addNode(false) },
+                        onSettings = ::onSettings
+                    )
+                } else {
+                    FieldsScreen(
+                        node = currentNode,
+                        onBack = ::navigateBack,
+                        onAddField = { /* TODO */ },
+                        onAddPhoto = { /* TODO */ },
+                        onAddDocument = { /* TODO */ },
+                        onAddReminder = { /* TODO */ }
+                    )
+                }
             }
-            AppScreen.FIELDS -> {
-                FieldsScreen(
-                    node = currentNode,
-                    onBack = ::navigateBack,
-                    onAdd = ::onAddCategory
-                )
-            }
+        }
+        //name dialog
+        if(showNameDialog) {
+            AlertDialog(
+                onDismissRequest = { showNameDialog = false },
+                title = { Text(if (pendingAddFolder) "New Folder Name" else "New Item Name") },
+                text = {
+                    OutlinedTextField(
+                        value = newNodeName,
+                        onValueChange = { newNodeName = it },
+                        placeholder = { Text("Enter Name") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                },
+                confirmButton = {
+                    Button(onClick = ::confirmAddNode) { Text("Create") }
+                },
+                dismissButton = {
+                    Button(onClick = {
+                        showNameDialog = false
+                    }) { Text("Cancel") }
+                }
+            )
         }
     }
 }
