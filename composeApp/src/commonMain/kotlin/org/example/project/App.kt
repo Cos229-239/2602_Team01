@@ -5,7 +5,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import ui.LoginScreen
 import ui.CreateAccountScreen
 import model.Node
@@ -45,6 +44,26 @@ fun App() {
             return current.copy(children = newChildren)
         }
 
+        fun findNodeById(current: Node, id: String): Node? {
+            if(current.id == id) {
+                return current
+            }
+            for (child in current.children) {
+                val result = findNodeById(child, id)
+                if(result != null) return result
+            }
+            return null
+        }
+        //helper to always update rootNode
+        fun addNodeToCurrent(newNode: Node) {
+            //add new node to current node's children
+            val updateNode = currentNode.copy(children = currentNode.children + newNode)
+            //update rootNode recursively
+            rootNode = updateNodeInTree(rootNode, updateNode)
+            //rebuild navstack from updated rootNode
+            navigationStack = navigationStack.mapNotNull { findNodeById(rootNode, it.id) }
+        }
+
         //screen state
         var currentScreen by remember { mutableStateOf(AppScreen.LOGIN) }
 
@@ -58,6 +77,7 @@ fun App() {
             newNodeName = ""
             showNameDialog = true
         }
+
         fun confirmAddNode() {
             if(newNodeName.isBlank()) return
             val newNode = Node(
@@ -66,19 +86,13 @@ fun App() {
                 icon = currentNode.icon,
                 isContainer = pendingAddFolder
             )
-            val updatedChildren = currentNode.children + newNode
-            val updatedNode = currentNode.copy(children = updatedChildren)
-
-            //update root tree
-            rootNode = updateNodeInTree(rootNode, updatedNode)
-            //update navigation stack
-            navigationStack = navigationStack.dropLast(1) + updatedNode
+            addNodeToCurrent(newNode)
 
             showNameDialog = false
         }
 
         //helper functions
-        fun nodeHasData(node: Node): Boolean {
+        /*fun nodeHasData(node: Node): Boolean {
             return node.fields.isNotEmpty() ||
                     node.documents.isNotEmpty() ||
                     node.pictures.isNotEmpty()
@@ -102,7 +116,7 @@ fun App() {
                 children = listOf(promotedChild),
                 isContainer = true
             )
-        }
+        }*/
         //screen change functions
         fun onLoginSuccess(email: String, password: String) {
             //later validate with Supabase
@@ -122,17 +136,6 @@ fun App() {
         //local functions
         fun onSettings() {
             //will navigate to settings screen
-        }
-
-        fun findNodeById(current: Node, id: String): Node? {
-            if(current.id == id) {
-                return current
-            }
-            for (child in current.children) {
-                val result = findNodeById(child, id)
-                if(result != null) return result
-            }
-            return null
         }
 
         //switching screens
