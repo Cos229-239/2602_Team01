@@ -64,6 +64,47 @@ fun App() {
             navigationStack = navigationStack.mapNotNull { findNodeById(rootNode, it.id) }
         }
 
+        //functions for Icon rename/delete/move
+        fun renameNode(target: Node, newName: String) {
+            val updatedNode = target.copy(title = newName)
+
+            rootNode = updateNodeInTree(rootNode, updatedNode)
+
+            navigationStack = navigationStack.mapNotNull {
+                findNodeById(rootNode, it.id)
+            }
+        }
+
+        fun deleteNode(target: Node) {
+            fun removeNode(current: Node): Node {
+                val newChildren = current.children
+                    .filter { it.id != target.id }
+                    .map { removeNode(it) }
+                return current.copy(children = newChildren)
+            }
+            rootNode = removeNode(rootNode)
+
+            navigationStack = navigationStack.mapNotNull {
+                findNodeById(rootNode, it.id)
+            }
+        }
+
+        fun moveNodeUp(target: Node) {
+            if(navigationStack.size < 2) return
+
+            val parent = navigationStack[navigationStack.size - 2]
+
+            deleteNode(target)
+
+            val updatedParent =
+                parent.copy(children = parent.children + target)
+
+            rootNode = updateNodeInTree(rootNode, updatedParent)
+
+            navigationStack =
+                navigationStack.mapNotNull { findNodeById(rootNode, it.id) }
+        }
+
         //screen state
         var currentScreen by remember { mutableStateOf(AppScreen.LOGIN) }
 
@@ -160,7 +201,10 @@ fun App() {
                         onBack = ::navigateBack,
                         onAddFolder = { addNode(true) },
                         onAddItem = { addNode(false) },
-                        onSettings = ::onSettings
+                        onSettings = ::onSettings,
+                        onRenameNode = ::renameNode,
+                        onDeleteNode = ::deleteNode,
+                        onMoveNode = ::moveNodeUp
                     )
                 } else {
                     FieldsScreen(

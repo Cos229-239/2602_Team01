@@ -10,15 +10,23 @@ import androidx.compose.ui.unit.dp
 import model.Node
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
+import kotlinproject.composeapp.generated.resources.*
+import androidx.compose.foundation.combinedClickable
+
 
 @Composable
 fun CategoryTile(
     title: String,
     icon: DrawableResource,
-    onClick: () -> Unit
+    isContainer: Boolean,
+    onClick: () -> Unit,
+    onLongPress: () -> Unit
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth().aspectRatio(1f).clickable { onClick() },
+        modifier = Modifier.fillMaxWidth().aspectRatio(1f).combinedClickable(
+            onClick = onClick,
+            onLongClick = onLongPress
+        ),
         elevation = CardDefaults.cardElevation(4.dp)
     ) {
         Column(
@@ -27,9 +35,15 @@ fun CategoryTile(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Icon(
-                painter = painterResource(icon),
+                painter = painterResource(
+                    if (isContainer) {
+                        Res.drawable.ic_folder
+                    } else {
+                        Res.drawable.ic_docs
+                    }
+                ),
                 contentDescription = title,
-                modifier = Modifier.size(48.dp)
+                modifier = Modifier.size(if (isContainer) 56.dp else 36.dp)
             )
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -38,6 +52,14 @@ fun CategoryTile(
                 text = title,
                 style = MaterialTheme.typography.titleMedium
             )
+            if(!isContainer) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "Item",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
         }
     }
 }
