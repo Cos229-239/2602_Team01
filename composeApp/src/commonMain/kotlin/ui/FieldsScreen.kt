@@ -104,7 +104,7 @@ fun FieldsScreen(
             isFolderContext = false,
 
             onAddFolder = {},
-            onAddItem = {},
+            onAddFile = {},
 
             onAddField = onAddField,
             onAddPhoto = onAddPhoto,

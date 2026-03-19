@@ -13,7 +13,7 @@ fun AddMenuSheet(
     modifier: Modifier = Modifier,
     isFolderContext: Boolean = false, //true-add folder/item, false-fieldscreen
     onAddFolder: () -> Unit,
-    onAddItem: () -> Unit,
+    onAddFile: () -> Unit,
     onAddField: () -> Unit,
     onAddPhoto: () -> Unit,
     onAddDocument: () -> Unit,
@@ -39,10 +39,10 @@ fun AddMenuSheet(
                     Text("Add Folder")
                 }
                 Button(
-                    onClick = onAddItem,
+                    onClick = onAddFile,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("Add Item")
+                    Text("Add File")
                 }
             } else {
                 Button(

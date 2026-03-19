@@ -20,12 +20,14 @@ fun CategoryTile(
     icon: DrawableResource,
     isContainer: Boolean,
     onClick: () -> Unit,
-    onLongPress: () -> Unit
+    onLongPress: () -> Unit,
+    onDoubleTap: () -> Unit
 ) {
     Card(
         modifier = Modifier.fillMaxWidth().aspectRatio(1f).combinedClickable(
             onClick = onClick,
-            onLongClick = onLongPress
+            onLongClick = onLongPress,
+            onDoubleClick = onDoubleTap
         ),
         elevation = CardDefaults.cardElevation(4.dp)
     ) {
@@ -55,7 +57,7 @@ fun CategoryTile(
             if(!isContainer) {
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "Item",
+                    text = "File",
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.primary
                 )

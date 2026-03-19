@@ -89,18 +89,41 @@ fun App() {
             }
         }
 
-        fun moveNodeUp(target: Node) {
-            if(navigationStack.size < 2) return
+        fun reorderNodes(parent: Node, fromIndex: Int, toIndex: Int) {
+            val list = parent.children.toMutableList()
+            val item = list.removeAt(fromIndex)
+            list.add(toIndex, item)
 
-            val parent = navigationStack[navigationStack.size - 2]
+            val updated = parent.copy(children = list)
 
-            deleteNode(target)
+            rootNode = updateNodeInTree(rootNode, updated)
+            navigationStack =
+                navigationStack.mapNotNull { findNodeById(rootNode, it.id) }
+        }
 
-            val updatedParent =
-                parent.copy(children = parent.children + target)
+        fun isDescendant(parent: Node, targetId: String): Boolean {
+            if (parent.id == targetId) return true
+            return parent.children.any { isDescendant(it, targetId)}
+        }
 
-            rootNode = updateNodeInTree(rootNode, updatedParent)
+        fun moveNode(node: Node, newParentId: String) {
+            if (isDescendant(node, newParentId)) return
 
+            fun removeNode(current: Node): Node {
+                val newChildren = current.children
+                    .filter { it.id != node.id }
+                    .map { removeNode(it) }
+                return current.copy(children = newChildren)
+            }
+            val treeWithoutNode = removeNode(rootNode)
+
+            val destination = findNodeById(treeWithoutNode, newParentId) ?: return
+
+            val updatedParent = destination.copy(
+                children = destination.children + node
+            )
+
+            rootNode = updateNodeInTree(treeWithoutNode, updatedParent)
             navigationStack =
                 navigationStack.mapNotNull { findNodeById(rootNode, it.id) }
         }
@@ -132,32 +155,6 @@ fun App() {
             showNameDialog = false
         }
 
-        //helper functions
-        /*fun nodeHasData(node: Node): Boolean {
-            return node.fields.isNotEmpty() ||
-                    node.documents.isNotEmpty() ||
-                    node.pictures.isNotEmpty()
-        }
-
-        fun promoteNode(node: Node): Node {
-            val promotedChild = Node(
-                id = IdGenerator.newId(),
-                title = node.title,
-                icon = node.icon,
-                isContainer = false,
-                fields = node.fields,
-                documents = node.documents,
-                pictures = node.pictures
-            )
-
-            return node.copy(
-                fields = mutableListOf(),
-                documents = mutableListOf(),
-                pictures = mutableListOf(),
-                children = listOf(promotedChild),
-                isContainer = true
-            )
-        }*/
         //screen change functions
         fun onLoginSuccess(email: String, password: String) {
             //later validate with Supabase
@@ -197,6 +194,7 @@ fun App() {
                 if (currentNode.isContainer) {
                     NodeScreen(
                         node = currentNode,
+                        rootNode = rootNode,
                         onNodeClick = ::navigateTo,
                         onBack = ::navigateBack,
                         onAddFolder = { addNode(true) },
@@ -204,7 +202,8 @@ fun App() {
                         onSettings = ::onSettings,
                         onRenameNode = ::renameNode,
                         onDeleteNode = ::deleteNode,
-                        onMoveNode = ::moveNodeUp
+                        onMoveNode = ::moveNode,
+                        onReorder = ::reorderNodes
                     )
                 } else {
                     FieldsScreen(
@@ -222,7 +221,7 @@ fun App() {
         if(showNameDialog) {
             AlertDialog(
                 onDismissRequest = { showNameDialog = false },
-                title = { Text(if (pendingAddFolder) "New Folder Name" else "New Item Name") },
+                title = { Text(if (pendingAddFolder) "New Folder Name" else "New File Name") },
                 text = {
                     OutlinedTextField(
                         value = newNodeName,

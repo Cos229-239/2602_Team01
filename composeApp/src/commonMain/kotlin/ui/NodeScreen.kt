@@ -10,11 +10,14 @@ import androidx.compose.ui.unit.dp
 import model.Node
 import org.jetbrains.compose.resources.painterResource
 import kotlinproject.composeapp.generated.resources.*
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NodeScreen(
     node: Node,
+    rootNode: Node,
     onNodeClick: (Node) -> Unit,
     onBack: () -> Unit,
     onAddFolder: () -> Unit,
@@ -22,7 +25,8 @@ fun NodeScreen(
     onSettings: () -> Unit,
     onRenameNode: (Node, String) -> Unit,
     onDeleteNode: (Node) -> Unit,
-    onMoveNode: (Node) -> Unit
+    onMoveNode: (Node, String) -> Unit,
+    onReorder: (Node, Int, Int) -> Unit
 ) {
     var showAddMenu by remember { mutableStateOf(false) }
 
@@ -32,7 +36,33 @@ fun NodeScreen(
     var showRenameDialog by remember { mutableStateOf(false) }
     var renameText by remember { mutableStateOf("") }
 
+    var reorderMode by remember { mutableStateOf(false) }
+    var draggedIndex by remember { mutableStateOf<Int?>(null) }
+    var nodeToMove by remember { mutableStateOf<Node?>(null) }
+    var showMoveDialog by remember { mutableStateOf(false) }
+
     fun dismissAddMenu() { showAddMenu = false }
+
+    @Composable
+    fun FolderPicker(
+        node: Node,
+        level: Int = 0,
+        onSelect: (Node) -> Unit
+    ) {
+        Column {
+            if (node.isContainer) {
+                TextButton(
+                    onClick = { onSelect(node) },
+                    modifier = Modifier.padding(start = (level * 16).dp)
+                ) {
+                    Text(node.title)
+                }
+            }
+            node.children.forEach {
+                FolderPicker(it, level + 1, onSelect)
+            }
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -70,25 +100,49 @@ fun NodeScreen(
             }
         }
     ) { paddingValues ->
-         LazyVerticalGrid(
-             columns = GridCells.Fixed(2),
-             modifier = Modifier.padding(paddingValues).padding(16.dp),
-             horizontalArrangement = Arrangement.spacedBy(16.dp),
-             verticalArrangement = Arrangement.spacedBy(16.dp)
+
+        Column(
+            modifier = Modifier.padding(paddingValues).fillMaxSize()
+        ) {
+            if(reorderMode) {
+                Text(
+                    text = "Select Destination",
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(8.dp)
+                )
+            }
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(2),
+                modifier = Modifier.padding(16.dp).weight(1f),
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-             items(node.children) { child ->
-                 CategoryTile(
-                     title = child.title,
-                     icon = child.icon,
-                     isContainer = child.isContainer,
-                     onClick = { onNodeClick(child) },
-                     onLongPress = {
-                         selectedNode = child
-                         showNodeMenu = true
-                     }
-                 )
-             }
-         }
+                itemsIndexed(node.children) { index, child ->
+                    CategoryTile(
+                        title = child.title,
+                        icon = child.icon,
+                        isContainer = child.isContainer,
+                        onClick = {
+                            if (reorderMode && draggedIndex != null) {
+                                onReorder(node, draggedIndex!!, index)
+                                draggedIndex = null
+                                reorderMode = false
+                            } else {
+                                onNodeClick(child)
+                            }
+                        },
+                        onLongPress = {
+                            selectedNode = child
+                            showNodeMenu = true
+                        },
+                        onDoubleTap = {
+                            reorderMode = true
+                            draggedIndex = index
+                        }
+                    )
+                }
+            }
+        }
     }
     AddMenuSheet(
         visible = showAddMenu,
@@ -97,7 +151,7 @@ fun NodeScreen(
             onAddFolder()
             dismissAddMenu()
         },
-        onAddItem = {
+        onAddFile = {
             onAddItem()
             dismissAddMenu()
         },
@@ -133,10 +187,11 @@ fun NodeScreen(
 
                     TextButton(
                         onClick = {
-                            onMoveNode(selectedNode!!)
+                            nodeToMove = selectedNode
+                            showMoveDialog = true
                             showNodeMenu = false
                         }
-                    ) { Text("Move Up a Folder") }
+                    ) { Text("Move") }
                 }
             },
             confirmButton = {}
@@ -166,6 +221,24 @@ fun NodeScreen(
                     onClick = { showRenameDialog = false }
                 ) { Text("Cancel") }
             }
+        )
+    }
+    if(showMoveDialog && nodeToMove != null) {
+        AlertDialog(
+            onDismissRequest = { showMoveDialog = false },
+            title = { Text("Move to...") },
+            text = {
+                Column(
+                    modifier = Modifier.heightIn(max = 400.dp)
+                        .verticalScroll(rememberScrollState())
+                ) {
+                    FolderPicker(rootNode) { destination ->
+                        onMoveNode(nodeToMove!!, destination.id)
+                        showMoveDialog = false
+                    }
+                }
+            },
+            confirmButton = {}
         )
     }
 }
