@@ -35,6 +35,8 @@ fun NodeScreen(
     var showNodeMenu by remember { mutableStateOf(false) }
     var showRenameDialog by remember { mutableStateOf(false) }
     var renameText by remember { mutableStateOf("") }
+    var showDeleteConfirmDialog by remember { mutableStateOf(false) }
+    var showFinalDeleteDialog by remember { mutableStateOf(false) }
 
     var reorderMode by remember { mutableStateOf(false) }
     var draggedIndex by remember { mutableStateOf<Int?>(null) }
@@ -180,7 +182,7 @@ fun NodeScreen(
 
                     TextButton(
                         onClick = {
-                            onDeleteNode(selectedNode!!)
+                            showDeleteConfirmDialog = true
                             showNodeMenu = false
                         }
                     ) { Text("Delete") }
@@ -220,6 +222,42 @@ fun NodeScreen(
                 Button(
                     onClick = { showRenameDialog = false }
                 ) { Text("Cancel") }
+            }
+        )
+    }
+    if(showDeleteConfirmDialog && selectedNode != null) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirmDialog = false },
+            title = { Text("Confirm Delete") },
+            text = { Text("Are you sure you want to delete '${selectedNode!!.title}'?") },
+            confirmButton = {
+                Button(onClick = {
+                    showDeleteConfirmDialog = false
+                    showFinalDeleteDialog = true
+                }) { Text("Yes") }
+            },
+            dismissButton = {
+                Button(onClick = { showDeleteConfirmDialog = false})
+                { Text("Cancel") }
+            }
+        )
+    }
+    if(showFinalDeleteDialog && selectedNode != null) {
+        AlertDialog(
+            onDismissRequest = { showFinalDeleteDialog = false },
+            title = { Text("Final Confirmation") },
+            text = { Text("Deleting '${selectedNode!!.title}' cannot be undone. " +
+                    "Press Confirm to delete.") },
+            confirmButton = {
+                Button(onClick = {
+                    onDeleteNode(selectedNode!!)
+                    showFinalDeleteDialog = false
+                    selectedNode = null
+                }) { Text("Confirm") }
+            },
+            dismissButton = {
+                Button(onClick = { showFinalDeleteDialog = false })
+                { Text("Cancel") }
             }
         )
     }

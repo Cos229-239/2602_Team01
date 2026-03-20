@@ -13,6 +13,7 @@ import ui.AddMenuSheet
 import ui.NodeScreen
 import ui.FieldsScreen
 import data.IdGenerator
+import model.Field
 
 @Composable
 @Preview
@@ -128,6 +129,46 @@ fun App() {
                 navigationStack.mapNotNull { findNodeById(rootNode, it.id) }
         }
 
+        fun updateField(nodeId: String, fieldId: String, newValue: String) {
+
+            fun update(current: Node): Node {
+                if (current.id == nodeId) {
+                    val updatedFields = current.fields.map {
+                        if (it.id == fieldId) it.copy(value = newValue)
+                        else it
+                    }.toMutableList()
+
+                    return current.copy(fields = updatedFields)
+                }
+
+                return current.copy(
+                    children = current.children.map { update(it) }
+                )
+            }
+
+            rootNode = update(rootNode)
+            navigationStack =
+                navigationStack.mapNotNull { findNodeById(rootNode, it.id) }
+        }
+
+        fun addField(name: String) {
+            if (name.isBlank()) return
+
+            val newField = Field(
+                id = IdGenerator.newId(),
+                label = name,
+                value = ""
+            )
+
+            val updatedNode = currentNode.copy(
+                fields = (currentNode.fields + newField).toMutableList()
+            )
+
+            rootNode = updateNodeInTree(rootNode, updatedNode)
+            navigationStack =
+                navigationStack.mapNotNull { findNodeById(rootNode, it.id) }
+        }
+
         //screen state
         var currentScreen by remember { mutableStateOf(AppScreen.LOGIN) }
 
@@ -209,10 +250,11 @@ fun App() {
                     FieldsScreen(
                         node = currentNode,
                         onBack = ::navigateBack,
-                        onAddField = { /* TODO */ },
+                        onAddField = { fieldName -> addField(fieldName) },
                         onAddPhoto = { /* TODO */ },
                         onAddDocument = { /* TODO */ },
-                        onAddReminder = { /* TODO */ }
+                        onAddReminder = { /* TODO */ },
+                        onUpdateField = ::updateField
                     )
                 }
             }

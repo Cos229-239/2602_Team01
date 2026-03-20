@@ -16,26 +16,41 @@ import org.jetbrains.compose.resources.painterResource
 import kotlinproject.composeapp.generated.resources.*
 import model.Field
 import ui.AddMenuSheet
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FieldsScreen(
     node: Node,
     onBack: () -> Unit,
-    onAddField: () -> Unit,
+    onAddField: (String) -> Unit,
     onAddPhoto: () -> Unit,
     onAddDocument: () -> Unit,
-    onAddReminder: () -> Unit
+    onAddReminder: () -> Unit,
+    onUpdateField: (String, String, String) -> Unit
 ) {
 
     var showAddMenu by remember { mutableStateOf(false) }
+
+    var showFieldDialog by remember { mutableStateOf(false) }
+    var newFieldName by remember { mutableStateOf("") }
+
+    val focusManager = LocalFocusManager.current
 
     fun dismissAddMenu() {
         showAddMenu = false
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
-
+    Box(
+        modifier = Modifier.fillMaxSize()
+            .clickable(
+                onClick = { focusManager.clearFocus() },
+                indication = null,
+                interactionSource = remember { MutableInteractionSource() }
+            )
+    ) {
         Scaffold(
             topBar = {
                 CenterAlignedTopAppBar(
@@ -89,10 +104,25 @@ fun FieldsScreen(
                 }
                 //Data Fields Section
                 if(node.fields.isNotEmpty()) {
-                    item { Text("Data Fields", style = MaterialTheme.typography.titleMedium) }
-                    items(node.fields.size) {
-                            i -> val field = node.fields[i]
-                        DataFieldCard(field)
+                    item(span = { GridItemSpan(maxCurrentLineSpan) }) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 8.dp)
+                        ) {
+                            Text("Data Fields", style = MaterialTheme.typography.titleMedium)
+                            Spacer(Modifier.height(8.dp))
+                            node.fields.forEach { field ->
+                                DataFieldCard(
+                                    field = field,
+                                    nodeId = node.id,
+                                    onUpdateField = onUpdateField,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 4.dp)
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -106,20 +136,55 @@ fun FieldsScreen(
             onAddFolder = {},
             onAddFile = {},
 
-            onAddField = onAddField,
+            onAddField = {
+                newFieldName = ""
+                showFieldDialog = true
+            },
             onAddPhoto = onAddPhoto,
             onAddDocument = onAddDocument,
             onAddReminder = onAddReminder,
 
             onDismiss = ::dismissAddMenu,
         )
-
     }
+    if (showFieldDialog) {
+        AlertDialog(
+            onDismissRequest = { showFieldDialog = false },
+            title = { Text("New Data Field Name") },
+            text = {
+                OutlinedTextField(
+                    value = newFieldName,
+                    onValueChange = { newFieldName = it },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        onAddField(newFieldName)
+                        showFieldDialog = false
+                    }
+                ) { Text("Create") }
+            },
+            dismissButton = {
+                Button(
+                    onClick = { showFieldDialog = false }
+                ) { Text("Cancel") }
+            }
+        )
+    }
+
 }
 
 @Composable
-fun DataFieldCard(field: Field) {
-    OutlinedCard( modifier = Modifier.fillMaxWidth().heightIn(min = 120.dp)
+fun DataFieldCard(field: Field,
+                  nodeId: String,
+                  onUpdateField: (String, String, String) -> Unit,
+                  modifier: Modifier = Modifier
+) {
+    OutlinedCard(modifier = modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 120.dp)
     ) {
         Column(modifier = Modifier.padding(12.dp)
         ) {
@@ -127,7 +192,7 @@ fun DataFieldCard(field: Field) {
             Spacer(Modifier.height(8.dp))
             OutlinedTextField(
                 value = field.value,
-                onValueChange = { field.value = it },
+                onValueChange = { onUpdateField(nodeId, field.id, it) },
                 modifier = Modifier.fillMaxWidth(),
                 maxLines = 3
             )
@@ -160,4 +225,5 @@ fun DocumentCard(document: DocumentReference) {
         }
     }
 }
+
 
