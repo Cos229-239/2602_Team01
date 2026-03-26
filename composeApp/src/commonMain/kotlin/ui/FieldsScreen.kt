@@ -29,13 +29,21 @@ fun FieldsScreen(
     onAddPhoto: () -> Unit,
     onAddDocument: () -> Unit,
     onAddReminder: () -> Unit,
-    onUpdateField: (String, String, String) -> Unit
+    onUpdateField: (String, String, String) -> Unit,
+    onReorderField: (Int, Int) -> Unit,
+    onDeleteField: (String, String) -> Unit,
+    onRenameField: (nodeId: String, fieldId: String, newLabel: String) -> Unit
 ) {
 
     var showAddMenu by remember { mutableStateOf(false) }
-
     var showFieldDialog by remember { mutableStateOf(false) }
     var newFieldName by remember { mutableStateOf("") }
+
+    //var selectedField by remember { mutableStateOf<Field?>(null) }
+    //var showFieldMenu by remember { mutableStateOf(false) }
+
+    var reorderMode by remember { mutableStateOf(false) }
+    var reorderFromIndex by remember { mutableStateOf<Int?>(null) }
 
     val focusManager = LocalFocusManager.current
 
@@ -86,6 +94,49 @@ fun FieldsScreen(
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
+                if(reorderMode && reorderFromIndex != null) {
+                    item(span = { GridItemSpan(maxCurrentLineSpan) }) {
+                        Text(
+                            text = "Select destination field",
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(8.dp)
+                        )
+                    }
+                }
+                //Data Fields Section
+                if(node.fields.isNotEmpty()) {
+                    item(span = { GridItemSpan(maxCurrentLineSpan) }) {
+                        Text("Data Fields", style = MaterialTheme.typography.titleMedium)
+                    }
+                    itemsIndexed(
+                        node.fields,
+                        span = { _, _ -> GridItemSpan(maxCurrentLineSpan) }
+                    ) { index, field ->
+
+                        DataFieldCard(
+
+                            field = field,
+                            nodeId = node.id,
+                            onUpdateField = onUpdateField,
+                            onDeleteField = onDeleteField,
+                            onReorderStart = {
+                                reorderFromIndex = index
+                                reorderMode = true
+                            },
+                            onRenameField = onRenameField,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 4.dp)
+                                .clickable {
+                                    if (reorderMode && reorderFromIndex != null && reorderFromIndex!! >= 0) {
+                                        onReorderField(reorderFromIndex!!, index)
+                                        reorderFromIndex = null
+                                        reorderMode = false
+                                    }
+                                }
+                        )
+                    }
+                }
                 //Documents Section
                 if(node.documents.isNotEmpty()) {
                     item { Text("Documents", style = MaterialTheme.typography.titleMedium) }
@@ -102,29 +153,6 @@ fun FieldsScreen(
                         PhotoCard(pic)
                     }
                 }
-                //Data Fields Section
-                if(node.fields.isNotEmpty()) {
-                    item(span = { GridItemSpan(maxCurrentLineSpan) }) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 8.dp)
-                        ) {
-                            Text("Data Fields", style = MaterialTheme.typography.titleMedium)
-                            Spacer(Modifier.height(8.dp))
-                            node.fields.forEach { field ->
-                                DataFieldCard(
-                                    field = field,
-                                    nodeId = node.id,
-                                    onUpdateField = onUpdateField,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(vertical = 4.dp)
-                                )
-                            }
-                        }
-                    }
-                }
             }
         }
 
@@ -139,6 +167,7 @@ fun FieldsScreen(
             onAddField = {
                 newFieldName = ""
                 showFieldDialog = true
+                showAddMenu = false
             },
             onAddPhoto = onAddPhoto,
             onAddDocument = onAddDocument,
@@ -180,21 +209,58 @@ fun FieldsScreen(
 fun DataFieldCard(field: Field,
                   nodeId: String,
                   onUpdateField: (String, String, String) -> Unit,
+                  onRenameField: (nodeId: String, fieldId: String, newLabel: String) -> Unit,
+                  onDeleteField: (String, String) -> Unit,
+                  onReorderStart: () -> Unit,
+                  //onMenuClick: (() -> Unit)? = null,
                   modifier: Modifier = Modifier
 ) {
-    OutlinedCard(modifier = modifier
-                    .fillMaxWidth()
-                    .heightIn(min = 120.dp)
-    ) {
-        Column(modifier = Modifier.padding(12.dp)
+    var showMenu by remember { mutableStateOf(false) }
+
+    Box(modifier = modifier) {
+        OutlinedCard(modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 120.dp)
         ) {
-            Text(field.label)
-            Spacer(Modifier.height(8.dp))
-            OutlinedTextField(
-                value = field.value,
-                onValueChange = { onUpdateField(nodeId, field.id, it) },
-                modifier = Modifier.fillMaxWidth(),
-                maxLines = 3
+            Column(modifier = Modifier.padding(12.dp)
+            ) {
+                Text(field.label)
+                Spacer(Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = field.value,
+                    onValueChange = { onUpdateField(nodeId, field.id, it) },
+                    modifier = Modifier.fillMaxWidth(),
+                    maxLines = 3
+                )
+            }
+        }
+        //Ellipsis + anchored menu
+        Box(modifier = Modifier.align(Alignment.TopEnd)) {
+
+            IconButton(onClick = { showMenu = true }) {
+                Icon(
+                    painter = painterResource(Res.drawable.ic_more_vert),
+                    contentDescription = "Menu",
+                    modifier = Modifier.size(30.dp)
+                )
+            }
+
+            ItemMenu(
+                expanded = showMenu,
+                itemName = field.label,
+                onDismiss = { showMenu = false },
+                onRename = { newLabel ->
+                    onRenameField(nodeId, field.id, newLabel)
+                    showMenu = false
+                },
+                onDelete = {
+                    onDeleteField(nodeId, field.id)
+                    showMenu = false
+                },
+                onReorder = {
+                    onReorderStart()
+                    showMenu = false
+                }
             )
         }
     }

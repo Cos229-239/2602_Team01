@@ -102,6 +102,36 @@ fun App() {
                 navigationStack.mapNotNull { findNodeById(rootNode, it.id) }
         }
 
+        fun reorderFields(fromIndex: Int, toIndex: Int) {
+            //make a mutable copy of current fields
+            val fieldsList = currentNode.fields.toMutableList()
+            //remove field at fromIndex
+            val field = fieldsList.removeAt(fromIndex)
+            //add field at toIndex
+            fieldsList.add(toIndex, field)
+            //create updated Node
+            val updatedNode = currentNode.copy(fields = fieldsList)
+            //update rootNode and rebuild navigation stack
+            rootNode = updateNodeInTree(rootNode, updatedNode)
+            navigationStack =
+                navigationStack.mapNotNull { findNodeById(rootNode, it.id) }
+        }
+
+        fun deleteField(nodeId: String, fieldId: String) {
+            fun update(current: Node): Node {
+                if (current.id == nodeId) {
+                    return current.copy(
+                        fields = current.fields.filter { it.id != fieldId }.toMutableList()
+                    )
+                }
+                return current.copy(
+                    children = current.children.map { update(it) }
+                )
+            }
+            rootNode = update(rootNode)
+            navigationStack = navigationStack.mapNotNull { findNodeById(rootNode, it.id) }
+        }
+
         fun isDescendant(parent: Node, targetId: String): Boolean {
             if (parent.id == targetId) return true
             return parent.children.any { isDescendant(it, targetId)}
@@ -149,6 +179,16 @@ fun App() {
             rootNode = update(rootNode)
             navigationStack =
                 navigationStack.mapNotNull { findNodeById(rootNode, it.id) }
+        }
+
+        fun renameField(nodeId: String, fieldId: String, newLabel: String) {
+            val fieldsList = currentNode.fields.map { field ->
+                if (field.id == fieldId) field.copy(label = newLabel)
+                else field
+            }.toMutableList()
+            val updatedNode = currentNode.copy(fields = fieldsList)
+            rootNode = updateNodeInTree(rootNode, updatedNode)
+            navigationStack = navigationStack.mapNotNull { findNodeById(rootNode, it.id) }
         }
 
         fun addField(name: String) {
@@ -254,7 +294,10 @@ fun App() {
                         onAddPhoto = { /* TODO */ },
                         onAddDocument = { /* TODO */ },
                         onAddReminder = { /* TODO */ },
-                        onUpdateField = ::updateField
+                        onUpdateField = ::updateField,
+                        onReorderField = ::reorderFields,
+                        onDeleteField = ::deleteField,
+                        onRenameField = ::renameField
                     )
                 }
             }

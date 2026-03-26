@@ -33,15 +33,11 @@ fun NodeScreen(
     //menu for long press/right click of icons
     var selectedNode by remember { mutableStateOf<Node?>(null) }
     var showNodeMenu by remember { mutableStateOf(false) }
-    var showRenameDialog by remember { mutableStateOf(false) }
-    var renameText by remember { mutableStateOf("") }
-    var showDeleteConfirmDialog by remember { mutableStateOf(false) }
-    var showFinalDeleteDialog by remember { mutableStateOf(false) }
 
     var reorderMode by remember { mutableStateOf(false) }
-    var draggedIndex by remember { mutableStateOf<Int?>(null) }
+    var reorderFromIndex by remember { mutableStateOf<Int?>(null) }
+
     var nodeToMove by remember { mutableStateOf<Node?>(null) }
-    var showMoveDialog by remember { mutableStateOf(false) }
 
     fun dismissAddMenu() { showAddMenu = false }
 
@@ -106,9 +102,9 @@ fun NodeScreen(
         Column(
             modifier = Modifier.padding(paddingValues).fillMaxSize()
         ) {
-            if(reorderMode) {
+            if(reorderMode && reorderFromIndex != null) {
                 Text(
-                    text = "Select Destination",
+                    text = "Select destination for '${selectedNode?.title}'",
                     color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.padding(8.dp)
                 )
@@ -121,25 +117,36 @@ fun NodeScreen(
             ) {
                 itemsIndexed(node.children) { index, child ->
                     CategoryTile(
+                        node = child,
                         title = child.title,
                         icon = child.icon,
                         isContainer = child.isContainer,
                         onClick = {
-                            if (reorderMode && draggedIndex != null) {
-                                onReorder(node, draggedIndex!!, index)
-                                draggedIndex = null
+                            //if in reorder mode, use click as destination
+                            if (reorderMode && reorderFromIndex != null && reorderFromIndex!! >= 0) {
+                                onReorder(node, reorderFromIndex!!, index)
+                                reorderFromIndex = null
                                 reorderMode = false
-                            } else {
+                                selectedNode = null
+                            }
+                            //if moving, use click as destination folder
+                            else if (nodeToMove != null) {
+                                onMoveNode(nodeToMove!!, child.id)
+                                nodeToMove = null
+                                selectedNode = null
+                            }
+                            else {
                                 onNodeClick(child)
                             }
                         },
-                        onLongPress = {
-                            selectedNode = child
-                            showNodeMenu = true
+                        onRenameNode = onRenameNode,
+                        onDeleteNode = onDeleteNode,
+                        onMove = {
+                            nodeToMove = child
                         },
-                        onDoubleTap = {
+                        onReorderStart = {
+                            reorderFromIndex = index
                             reorderMode = true
-                            draggedIndex = index
                         }
                     )
                 }
@@ -164,119 +171,27 @@ fun NodeScreen(
         onDismiss = ::dismissAddMenu
     )
 
-    //menu dialog for long press/right click
-    if(showNodeMenu && selectedNode != null) {
+    if (nodeToMove != null) {
         AlertDialog(
-            onDismissRequest = { showNodeMenu = false },
-            title = { Text(selectedNode!!.title) },
-            text = {
-                Column {
-
-                    TextButton(
-                        onClick = {
-                            renameText = selectedNode!!.title
-                            showRenameDialog = true
-                            showNodeMenu = false
-                        }
-                    ) { Text("Rename") }
-
-                    TextButton(
-                        onClick = {
-                            showDeleteConfirmDialog = true
-                            showNodeMenu = false
-                        }
-                    ) { Text("Delete") }
-
-                    TextButton(
-                        onClick = {
-                            nodeToMove = selectedNode
-                            showMoveDialog = true
-                            showNodeMenu = false
-                        }
-                    ) { Text("Move") }
-                }
-            },
-            confirmButton = {}
-        )
-    }
-    if(showRenameDialog && selectedNode != null) {
-        AlertDialog(
-            onDismissRequest = { showRenameDialog = false },
-            title = { Text("Rename ${selectedNode!!.title}") },
-            text = {
-                OutlinedTextField(
-                    value = renameText,
-                    onValueChange = { renameText = it },
-                    modifier = Modifier.fillMaxWidth()
-                )
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        onRenameNode(selectedNode!!, renameText)
-                        showRenameDialog = false
-                    }
-                ) { Text("Save") }
-            },
-            dismissButton = {
-                Button(
-                    onClick = { showRenameDialog = false }
-                ) { Text("Cancel") }
-            }
-        )
-    }
-    if(showDeleteConfirmDialog && selectedNode != null) {
-        AlertDialog(
-            onDismissRequest = { showDeleteConfirmDialog = false },
-            title = { Text("Confirm Delete") },
-            text = { Text("Are you sure you want to delete '${selectedNode!!.title}'?") },
-            confirmButton = {
-                Button(onClick = {
-                    showDeleteConfirmDialog = false
-                    showFinalDeleteDialog = true
-                }) { Text("Yes") }
-            },
-            dismissButton = {
-                Button(onClick = { showDeleteConfirmDialog = false})
-                { Text("Cancel") }
-            }
-        )
-    }
-    if(showFinalDeleteDialog && selectedNode != null) {
-        AlertDialog(
-            onDismissRequest = { showFinalDeleteDialog = false },
-            title = { Text("Final Confirmation") },
-            text = { Text("Deleting '${selectedNode!!.title}' cannot be undone. " +
-                    "Press Confirm to delete.") },
-            confirmButton = {
-                Button(onClick = {
-                    onDeleteNode(selectedNode!!)
-                    showFinalDeleteDialog = false
-                    selectedNode = null
-                }) { Text("Confirm") }
-            },
-            dismissButton = {
-                Button(onClick = { showFinalDeleteDialog = false })
-                { Text("Cancel") }
-            }
-        )
-    }
-    if(showMoveDialog && nodeToMove != null) {
-        AlertDialog(
-            onDismissRequest = { showMoveDialog = false },
-            title = { Text("Move to...") },
+            onDismissRequest = { nodeToMove = null },
+            title = { Text("Select destination") },
             text = {
                 Column(
-                    modifier = Modifier.heightIn(max = 400.dp)
+                    modifier = Modifier.fillMaxWidth()
                         .verticalScroll(rememberScrollState())
                 ) {
-                    FolderPicker(rootNode) { destination ->
-                        onMoveNode(nodeToMove!!, destination.id)
-                        showMoveDialog = false
+                    FolderPicker(rootNode) { selected ->
+                        onMoveNode(nodeToMove!!, selected.id)
+                        nodeToMove = null
                     }
                 }
             },
-            confirmButton = {}
+            confirmButton = {},
+            dismissButton = {
+                Button(onClick = { nodeToMove = null }) {
+                    Text("Cancel")
+                }
+            }
         )
     }
 }

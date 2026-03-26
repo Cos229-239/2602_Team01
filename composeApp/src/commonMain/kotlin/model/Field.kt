@@ -2,7 +2,7 @@ package model
 
 data class Field(
     val id: String,
-    val label: String,
+    var label: String,
 
     var value: String = "",
 
