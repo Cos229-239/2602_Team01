@@ -5,6 +5,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import data.Template
+import data.allTemplates
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -15,6 +17,7 @@ fun AddMenuSheet(
     onAddFolder: () -> Unit,
     onAddFile: () -> Unit,
     onAddField: () -> Unit,
+    onAddTemplate: () -> Unit,
     onAddPhoto: () -> Unit,
     onAddDocument: () -> Unit,
     onAddReminder: () -> Unit,
@@ -36,13 +39,19 @@ fun AddMenuSheet(
                     onClick = onAddFolder,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("Add Folder")
+                    Text("Add Custom Folder")
                 }
                 Button(
                     onClick = onAddFile,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("Add File")
+                    Text("Add Custom File")
+                }
+                Button(
+                    onClick = onAddTemplate,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Add Template")
                 }
             } else {
                 Button(

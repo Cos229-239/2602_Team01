@@ -12,6 +12,8 @@ import org.jetbrains.compose.resources.painterResource
 import kotlinproject.composeapp.generated.resources.*
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.rememberScrollState
+import data.Template
+import data.allTemplates
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -22,6 +24,7 @@ fun NodeScreen(
     onBack: () -> Unit,
     onAddFolder: () -> Unit,
     onAddItem: () -> Unit,
+    onAddTemplate: (Template) -> Unit,
     onSettings: () -> Unit,
     onRenameNode: (Node, String) -> Unit,
     onDeleteNode: (Node) -> Unit,
@@ -33,6 +36,8 @@ fun NodeScreen(
     //menu for long press/right click of icons
     var selectedNode by remember { mutableStateOf<Node?>(null) }
     var showNodeMenu by remember { mutableStateOf(false) }
+
+    var showTemplatePicker by remember { mutableStateOf(false) }
 
     var reorderMode by remember { mutableStateOf(false) }
     var reorderFromIndex by remember { mutableStateOf<Int?>(null) }
@@ -164,6 +169,10 @@ fun NodeScreen(
             onAddItem()
             dismissAddMenu()
         },
+        onAddTemplate = {
+            showTemplatePicker = true
+            dismissAddMenu()
+        },
         onAddField = {},
         onAddPhoto = {},
         onAddDocument = {},
@@ -171,6 +180,7 @@ fun NodeScreen(
         onDismiss = ::dismissAddMenu
     )
 
+    //move dialog
     if (nodeToMove != null) {
         AlertDialog(
             onDismissRequest = { nodeToMove = null },
@@ -189,6 +199,65 @@ fun NodeScreen(
             confirmButton = {},
             dismissButton = {
                 Button(onClick = { nodeToMove = null }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
+    //template dialog
+    if (showTemplatePicker) {
+        AlertDialog(
+            onDismissRequest = { showTemplatePicker = false },
+            title = { Text("Select Template") },
+            text = {
+                Column(
+                    modifier = Modifier.fillMaxWidth()
+                        .verticalScroll(rememberScrollState())
+                ) {
+
+                    @Composable
+                    fun TemplateNodePreview(node: Node, level: Int) {
+                        Column {
+                            Text(
+                                text = node.title,
+                                modifier = Modifier.padding(start = (level * 16).dp)
+                            )
+                            node.children.forEach {
+                                TemplateNodePreview(it, level + 1)
+                            }
+                        }
+                    }
+
+                    @Composable
+                    fun TemplatePreview(
+                        template: Template,
+                        level: Int = 0
+                    ) {
+                        Column {
+                            TextButton(
+                                onClick = {
+                                    onAddTemplate(template)
+                                    showTemplatePicker = false
+                                },
+                                modifier = Modifier.padding(start = (level * 16).dp)
+                            ) {
+                                Text(template.name)
+                            }
+                            template.defaultNodes.forEach { node ->
+                                TemplateNodePreview(node, level + 1)
+                            }
+                        }
+                    }
+
+                    allTemplates.forEach { template ->
+                        TemplatePreview(template)
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                Button(onClick = { showTemplatePicker = false }) {
                     Text("Cancel")
                 }
             }

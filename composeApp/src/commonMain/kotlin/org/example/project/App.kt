@@ -13,6 +13,8 @@ import ui.AddMenuSheet
 import ui.NodeScreen
 import ui.FieldsScreen
 import data.IdGenerator
+import data.Template
+import data.instantiateTemplate
 import model.Field
 
 @Composable
@@ -223,6 +225,22 @@ fun App() {
             showNameDialog = true
         }
 
+        fun addNodeToParent(parentId: String, newNode: Node) {
+            fun recurse(node: Node): Node {
+                if (node.id == parentId) {
+                    return node.copy(
+                        children = node.children + newNode
+                    )
+                }
+                return node.copy(
+                    children = node.children.map { recurse(it) }
+                )
+            }
+            rootNode = recurse(rootNode)
+            navigationStack =
+                navigationStack.mapNotNull { findNodeById(rootNode, it.id) }
+        }
+
         fun confirmAddNode() {
             if(newNodeName.isBlank()) return
             val newNode = Node(
@@ -257,6 +275,13 @@ fun App() {
             //will navigate to settings screen
         }
 
+        //adding templates
+        fun addTemplate(parentId: String, template: Template) {
+            val newNode = instantiateTemplate(template)
+            addNodeToParent(parentId, newNode)
+        }
+
+
         //switching screens
         when (currentScreen) {
             AppScreen.LOGIN -> {
@@ -280,6 +305,9 @@ fun App() {
                         onBack = ::navigateBack,
                         onAddFolder = { addNode(true) },
                         onAddItem = { addNode(false) },
+                        onAddTemplate = { template ->
+                            addTemplate(currentNode.id, template)
+                        },
                         onSettings = ::onSettings,
                         onRenameNode = ::renameNode,
                         onDeleteNode = ::deleteNode,

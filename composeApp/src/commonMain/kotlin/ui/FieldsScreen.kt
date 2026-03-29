@@ -163,6 +163,7 @@ fun FieldsScreen(
 
             onAddFolder = {},
             onAddFile = {},
+            onAddTemplate = {},
 
             onAddField = {
                 newFieldName = ""
